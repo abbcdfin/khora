@@ -2,25 +2,26 @@
 
 ## Roadmap
 
-No phase accepted yet. The thin slice below is proposed as the first Decision Check Point.
+- [/] **Phase 1: Thin end-to-end slice.** `khora get <name>` returns a `secret` credential from a simulated KhoraVault, under its release policy, after a terminal approval standing in for the Khora app. Board in `active_plan.md`.
 
 ## Candidates
 
 <!-- Holding pen for unnumbered DRAFT ideas awaiting Decision Check Points -->
 
-- **Thin end-to-end slice (proposed first).** A CLI client (stand-in for `openclaw`) requests one credential from `khora-agent`, which fetches it from a simulated KhoraVault; approval is a terminal prompt standing in for the Khora app. Defines the agent IPC and the agent ↔ device protocol only as far as this path needs.
 - **Real device.** Replace the simulated KhoraVault with a dev board over USB (virtual serial or HID), with secure storage behind an enclave abstraction.
 - **Mobile approval.** Khora app over BLE: pairing, request notification, biometric approval. Replaces the terminal prompt.
-- **openclaw integration.** Native `openclaw` client for the agent IPC.
-- **Generic environment shim.** Drop-in injector that exports a released credential into a child process's environment.
+- **openclaw integration.** Native `openclaw` client for the client protocol.
+- **Environment shim.** `khora exec` runs a command with `value`-delivered credentials in its environment, for programs the agent does not steer.
+- **Browser fill (`fill`).** Khora browser extension and native-messaging host: fills and submits `login` credentials on bound origins, with TOTP codes computed on the device.
+- **Token proxy (`inject`).** Local proxy attaching `secret` and `oauth` tokens to requests for bound hosts, including OAuth enrollment (`khora oauth add`) and refresh.
+- **Passkeys (`sign`).** KhoraVault as a FIDO2 security key over USB HID (CTAP2), approved on the phone.
 
 ### Pending decisions
 
 Each needs a product-owner choice before the candidate that depends on it can be accepted; the verdict is recorded in `docs/`.
 
-- Host agent language (Rust / Go / other) — blocks the thin slice.
-- Agent IPC encoding (JSON-RPC / protobuf) — blocks the thin slice.
 - Target host platforms (Linux first, or Linux + macOS + Windows).
 - Channel encryption scheme (Noise / ECDH + AES-GCM / other).
 - Device MCU and secure element (ESP32-S3 / nRF52840 / other).
 - Mobile stack (Flutter / native Swift + Kotlin).
+- OAuth refresh exchange and client registration (open questions in `docs/credential_model.md`) — block the token proxy.

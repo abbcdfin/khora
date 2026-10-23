@@ -19,7 +19,7 @@ The name comes from Plato's /khôra/ (χώρα), the receptacle that holds thing
 +------------------+          +-------------------+          +-------------------+
 |                  |   BLE    |                   |   USB    |                   |
 |    Khora App     | <------> |    KhoraVault     | <------> |   Host Device     |
-| (Authentication) |          | (Secure Storage)  |          | (khora-agent +    |
+| (Authentication) |          | (Secure Storage)  |          | (khorad +         |
 |                  |          |                   |          |  openclaw/agents) |
 +------------------+          +-------------------+          +-------------------+
 #+END_SRC
@@ -32,7 +32,7 @@ The name comes from Plato's /khôra/ (χώρα), the receptacle that holds thing
 ** 2. Khora App (Mobile Authenticator)
 - A dedicated app that manages device pairing and grants access via biometric or PIN authentication.
 
-** 3. khora-agent (Host Agent)
+** 3. khorad (Host Service)
 - A lightweight service/driver running on the host machine that communicates with KhoraVault to retrieve credentials upon request.
 
 * Security Design
@@ -45,7 +45,7 @@ Khora protects secrets at rest and against unapproved use; it does not protect a
 * Usage Scenario: openclaw
 Instead of configuring =openclaw= with an API key in a =.env= file:
 1. Plug KhoraVault into the USB port.
-2. openclaw requests the API key from =khora-agent=.
+2. openclaw requests the API key from =khorad=.
 3. KhoraVault notifies the Khora app via Bluetooth.
 4. User approves the request on their phone (FaceID/Fingerprint).
 5. KhoraVault releases the API key to openclaw over the secure USB channel.
