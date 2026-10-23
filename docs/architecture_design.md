@@ -46,7 +46,7 @@ Khora is a secure hardware-anchored credential bridge system. It decouples long-
 
 ## Data & Communication Seams
 1. **Clients to khorad**: Newline-delimited JSON-RPC 2.0 over the local socket; contract in `client_protocol.md`.
-2. **khorad to KhoraVault**: Encrypted serial/HID request-response protocol. How host and device first establish trust is an open question (see Security).
+2. **khorad to KhoraVault**: Encrypted serial/HID request-response protocol carrying CBOR messages defined by one CDDL schema (see Decisions). How host and device first establish trust is an open question (see Security).
 3. **KhoraVault to Khora App**: Authenticated, encrypted BLE connection; the scheme is a pending decision in `vdesign/plan.md`.
 
 ## Security
@@ -78,7 +78,7 @@ Khora does not protect against:
 ## Decisions
 
 ### 2026-10-23: `khorad` is written in Rust
-Chosen over Go. The service holds plaintext credentials, so it must wipe them from memory reliably (`zeroize`); Go's garbage collector can leave copies behind. Rust also lets the host and KhoraVault firmware share one protocol crate, so the two ends cannot drift. Accepted cost: slower iteration.
+Chosen over Go. The service holds plaintext credentials, so it must wipe them from memory reliably (`zeroize`); Go's garbage collector can leave copies behind. Accepted cost: slower iteration. (A second reason, sharing one protocol crate with Rust firmware, is superseded by the CDDL schema below.)
 
 ### 2026-10-23: Clients talk to `khorad` in newline-delimited JSON-RPC 2.0
 Chosen over protobuf. Any runtime can integrate with a socket and a JSON parser, shell scripts included, which is what the universal agent interface requires; protobuf would need code generation in every client. Every request waits on a human approval, so encoding speed is irrelevant. The method schema lives in `docs/`. This covers the client ↔ host seam only; the host ↔ device encoding is decided with the real-device work.
@@ -94,3 +94,6 @@ Credential handling belongs to the harness, not the model. A value in the model'
 
 ### 2026-10-23: `inject` attaches credentials only where their scheme defines, via a reverse proxy
 Substituting placeholders anywhere in a request would let the model write a secret into content sent to an allowed host. Intercepting TLS would need a trusted local CA, which breaks certificate pinning and becomes a secret itself, so it is reserved for clients that cannot change their base URL. `inject` therefore covers header and query tokens, plus per-request signing schemes added on demand; other uses go to `sign`, `fill`, or `value` (`credential_model.md`, Choosing a channel).
+
+### 2026-10-23: `khorad` ↔ KhoraVault messages are CBOR, defined by one CDDL schema
+Chosen over Protocol Buffers. Passkey support (CTAP2) already requires a CBOR parser on the device, so the device keeps a single parser facing a possibly compromised host; `zcbor`, part of Zephyr, generates it from the schema without dynamic allocation. Accepted cost: the Rust side is not generated, so `khorad` is held to the schema by shared test vectors, encoded by the host, validated against the CDDL, and decoded by the device in its tests.
