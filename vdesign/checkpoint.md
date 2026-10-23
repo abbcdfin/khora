@@ -7,7 +7,8 @@
 - Renamed the host service `khora-agent` to `khorad`, with `khora` as its command-line client.
 - Decided: `khorad` in Rust, client protocol in newline-delimited JSON-RPC 2.0 (rationale in `docs/architecture_design.md`).
 - Designed credential types, delivery channels (`value`, `fill`, `inject`, `sign`), and per-credential release policy in `docs/credential_model.md`; client protocol in `docs/client_protocol.md`.
-- Phase 1 (thin end-to-end slice) accepted and in progress: `secret` credentials by `value` delivery only.
+- Designed agent integration in `docs/agent_integration.md`: the runtime holds values, the model sees capabilities only (`khora mcp`), model-facing error results, and the sandbox requirement. Narrowed `inject` to scheme-defined locations via a reverse proxy; added the `ssh_key` type.
+- Phase 1 (thin end-to-end slice) accepted and in progress: `secret` credentials by `value` delivery only, plus an example runtime client.
 
 ## Next Steps
 - Build the Phase 1 board in `active_plan.md`, starting with the Cargo workspace and the `Device` interface.

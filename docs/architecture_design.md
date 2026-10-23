@@ -1,7 +1,7 @@
 # Architecture Design
 
 ## Overview
-Khora is a secure hardware-anchored credential bridge system. It decouples long-lived API keys and secrets from untrusted host filesystems, delegating storage to a tamper-resistant hardware device (`KhoraVault`) and requiring out-of-band authorization via a mobile device (`Khora app`). What is stored, and the policy under which it may leave the device, is defined in `credential_model.md`.
+Khora is a secure hardware-anchored credential bridge system. It decouples long-lived API keys and secrets from untrusted host filesystems, delegating storage to a tamper-resistant hardware device (`KhoraVault`) and requiring out-of-band authorization via a mobile device (`Khora app`). What is stored, and the policy under which it may leave the device, is defined in `credential_model.md`; how agents use it, in `agent_integration.md`.
 
 ```
 +-------------------+          +-------------------+          +-------------------+
@@ -30,7 +30,7 @@ Khora is a secure hardware-anchored credential bridge system. It decouples long-
 
 ### 2. khorad (Host Service)
 - **Role**: Lightweight service on the host: the only process that talks to KhoraVault, and the endpoint every client connects to.
-- **Implementation**: Rust (see Decisions). The `host/` crate builds two binaries: `khorad`, the service, and `khora`, a command-line client for shells and testing.
+- **Implementation**: Rust (see Decisions). The `host/` crate builds two binaries: `khorad`, the service, and `khora`, a command-line client for shells and testing (later also `khora mcp`, the model-facing MCP server).
 - **Device seam**: KhoraVault is reached through a `Device` interface that owns approval and release-policy evaluation as well as storage, so the trust boundary sits on the device side. Phase 1 implements it with an in-process simulator whose approval is a terminal prompt; the USB device replaces it later without changing `khorad`.
 - **Interfaces**:
   - Downstream: Communicates with KhoraVault over USB (Virtual Serial or HID).
@@ -53,7 +53,7 @@ Khora is a secure hardware-anchored credential bridge system. It decouples long-
 
 ### Invariants
 - **Master key stays on the device.** `khorad` receives only the individual credential released for an approved request, and `passkey` credentials never leave the device at all.
-- **No credential value reaches a language model.** Models handle credential names only; values go to the narrowest component that can use them (`credential_model.md`).
+- **No credential value reaches a language model.** Models handle credential names only; values go to the narrowest component that can use them (`credential_model.md`, `agent_integration.md`).
 - **Every release is governed by the credential's policy** and covered by an out-of-band approval on the Khora app, per request or for a time-boxed grant.
 - **Brute-force resistance.** KhoraVault enforces a monotonic failure counter, rate limiting, and an optional cryptographic wipe after repeated failed attempts.
 - **Every seam is authenticated and encrypted**: Khora app ↔ KhoraVault over BLE, KhoraVault ↔ host over USB.
@@ -68,7 +68,8 @@ Khora protects against:
 Khora does not protect against:
 - A compromised host. The request details the app displays (requesting client, origin or host) come from the host and can be forged, and a released credential is plaintext in host memory, readable by anything running with the client's privileges.
 - Misuse by a process that received a value by `value` delivery: anything it runs or prints can see the value.
-- What an agent does with access once granted: a logged-in browser session or an access token permits whatever the account or the token's scopes permit.
+- Model-executed code that can reach the `khorad` socket. Policy matches the requesting executable, so a script the model runs with the runtime's interpreter passes as the runtime; the agent's command execution must be sandboxed away from the socket (`agent_integration.md`).
+- What an agent does with access once granted: a logged-in browser session or an access token permits whatever the account or the token's scopes permit, and an allowed host such as `api.github.com` also serves an attacker's repositories.
 - A mistaken approval. Approval is only as reliable as what the user is shown.
 
 ### Open questions
@@ -87,3 +88,9 @@ A single "return the value" release would hand every secret to whichever process
 
 ### 2026-10-23: Phase 1 is a thin end-to-end slice on a simulated device
 The `khora` CLI, `khorad`, and an in-process simulated KhoraVault with terminal approval, on Linux only, releasing `secret` credentials by `value` delivery. It exercises the client protocol, client identification, release policy, and the device seam before any hardware exists, so the contract is proven by a working path rather than written up front. Simulating the device in-process (rather than over a pty) defers the host ↔ device encoding to the real-device work, where it belongs.
+
+### 2026-10-23: Agents use Khora through their runtime; the model sees capabilities only
+Credential handling belongs to the harness, not the model. A value in the model's context leaks into transcripts, logs, and the model provider, and is exposed to prompt injection. So the runtime fetches values and uses them in its own code, and the model sees authenticated tools, discovery by name, and (with the token proxy) requests made on its behalf, served by `khora mcp`. Details in `agent_integration.md`.
+
+### 2026-10-23: `inject` attaches credentials only where their scheme defines, via a reverse proxy
+Substituting placeholders anywhere in a request would let the model write a secret into content sent to an allowed host. Intercepting TLS would need a trusted local CA, which breaks certificate pinning and becomes a secret itself, so it is reserved for clients that cannot change their base URL. `inject` therefore covers header and query tokens, plus per-request signing schemes added on demand; other uses go to `sign`, `fill`, or `value` (`credential_model.md`, Choosing a channel).
