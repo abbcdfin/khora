@@ -22,8 +22,11 @@ Khora is a secure hardware-anchored credential bridge system. It decouples long-
 ### 1. KhoraVault (Hardware Appliance)
 - **Role**: Secure physical storage and cryptographic engine.
 - **Physical interfaces**: USB-C (host communication), Bluetooth Low Energy (mobile interaction).
+- **Platform**: Zephyr RTOS, firmware in C (see Decisions). Development on the ESP32-P4-Function-EV-Board (pre-v3 silicon, Zephyr board `esp32p4_function_ev_board`), whose ESP32-C6 is the BLE radio, reached over SDIO as an HCI controller; secure boot and flash encryption work on the ESP32-S3; production MCU pending.
+- **Radio trust**: where the radio is a separate chip (the P4's C6), it is untrusted: phone ↔ device encryption terminates on the main MCU, and the radio carries only ciphertext.
 - **Core capabilities**:
-  - Secure key storage in hardware enclave / secure element.
+  - Master key and long-lived keys held in a secure element (part pending); the credential store is encrypted under it.
+  - Trusted time from the Khora app over the authenticated BLE link, never from the host, for TOTP codes and TLS certificate validation.
   - Device-locked state machine: denies credential retrieval unless an active BLE authorization token is validated.
   - Release-policy evaluation for every request (`credential_model.md`).
   - Monotonic retry counter, rate limiting, and brute-force protection.
@@ -97,3 +100,9 @@ Substituting placeholders anywhere in a request would let the model write a secr
 
 ### 2026-10-23: `khorad` ↔ KhoraVault messages are CBOR, defined by one CDDL schema
 Chosen over Protocol Buffers. Passkey support (CTAP2) already requires a CBOR parser on the device, so the device keeps a single parser facing a possibly compromised host; `zcbor`, part of Zephyr, generates it from the schema without dynamic allocation. Accepted cost: the Rust side is not generated, so `khorad` is held to the schema by shared test vectors, encoded by the host, validated against the CDDL, and decoded by the device in its tests.
+
+### 2026-10-23: KhoraVault firmware is C on Zephyr; development on ESP32-P4, security work on ESP32-S3
+Zephyr over ESP-IDF: one firmware builds across vendors (the target chip has already changed once), runs as a Linux program (`native_sim`) for testing alongside `khorad`, and boots through standard MCUboot. C over Rust: Rust on Zephyr is experimental and untested on the P4. Accepted cost: Zephyr lags Espressif's security features. MCUboot secure boot and flash encryption are supported on the ESP32-S3 but in progress on the ESP32-P4, and the HMAC, Digital Signature, and ECDSA units are not exposed (Espressif's HAL can be called directly if ever needed). So development uses the P4 board in hand, with test secrets only; secure boot and flash encryption are built on the S3; the production MCU is chosen once Zephyr's P4 support lands, or not.
+
+### 2026-10-23: A secure element holds KhoraVault's master key and long-lived keys
+ESP32 chips have a history of fault-injection attacks on secure boot and key storage, and Zephyr does not expose their key hardware. A certified secure element on I2C resists physical extraction, is reachable from any framework, and survives a change of MCU. The part is pending.

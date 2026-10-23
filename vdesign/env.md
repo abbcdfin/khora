@@ -3,7 +3,8 @@
 ## Toolchain Defaults
 - **Python**: Default to `uv` (`uv run ...`, `uv pip ...`) for any Python components (e.g. CLI tools, simulation scripts).
 - **Host service**: Rust stable via `rustup`; build and test with `cargo` from the repository root.
-- Firmware and mobile toolchains follow the pending decisions in `plan.md`.
+- **Firmware**: Zephyr (C) with `west` and the Zephyr SDK. Boards: `esp32p4_function_ev_board` (development; its C6 needs `esp-hosted-mcu` 3.x firmware) and `esp32s3_devkitc/esp32s3/procpu` (secure boot and flash encryption work). Flash and inspect with `esptool.py`.
+- Mobile toolchain follows the pending decision in `plan.md`.
 
 ## Environment Variables
 - `KHORA_SOCKET`: Overrides the `khorad` socket path (default and permissions in `docs/architecture_design.md`).

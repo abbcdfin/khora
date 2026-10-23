@@ -25,8 +25,9 @@ The name comes from Plato's /khôra/ (χώρα), the receptacle that holds thing
 #+END_SRC
 
 ** 1. KhoraVault (Hardware)
-- Microcontroller with secure enclave or external TPM.
-- Bluetooth Low Energy (BLE) module.
+- ESP32-S3 or ESP32-P4 running Zephyr RTOS.
+- Secure element holding the master key and long-lived keys.
+- Bluetooth Low Energy (BLE), built in on the S3 and through a companion ESP32-C6 on the P4.
 - USB-C interface.
 
 ** 2. Khora App (Mobile Authenticator)

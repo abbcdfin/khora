@@ -8,7 +8,9 @@
 
 <!-- Holding pen for unnumbered DRAFT ideas awaiting Decision Check Points -->
 
-- **Real device.** Replace the simulated KhoraVault with a dev board over USB (virtual serial or HID), with secure storage behind an enclave abstraction.
+- **Board spike.** Throwaway, in `vdesign/utils/`. Read the P4's chip revision (`esptool.py --chip esp32p4 chip_id`; Zephyr's board targets v1.3). On the P4 board and an ESP32-S3-DevKitC: boot Zephyr, enumerate USB as a data interface plus HID, advertise BLE (through the C6 on the P4), round-trip a `zcbor`-generated message.
+- **Real device.** Replace the simulated KhoraVault with Zephyr firmware on the dev boards over USB, messages in CBOR per the CDDL schema, keys in the secure element.
+- **Device hardening.** MCUboot secure boot and flash encryption on the ESP32-S3, and on the P4 once Zephyr supports it. Burns eFuses irreversibly: done deliberately, on a dedicated board.
 - **Mobile approval.** Khora app over BLE: pairing, request notification, biometric approval. Replaces the terminal prompt.
 - **openclaw integration.** Native `openclaw` client for the client protocol.
 - **Environment shim.** `khora exec` runs a command with `value`-delivered credentials in its environment, for programs the agent does not steer.
@@ -24,6 +26,7 @@ Each needs a product-owner choice before the candidate that depends on it can be
 
 - Target host platforms (Linux first, or Linux + macOS + Windows).
 - Channel encryption scheme (Noise / ECDH + AES-GCM / other).
-- Device MCU and secure element (ESP32-S3 / nRF52840 / other).
+- Production MCU (ESP32-S3 / ESP32-P4 v3 silicon), once Zephyr's P4 secure boot support lands or not.
+- Secure element part (ATECC608B / NXP SE050 / Infineon OPTIGA Trust M) — blocks the real device.
 - Mobile stack (Flutter / native Swift + Kotlin).
 - OAuth refresh exchange and client registration (open questions in `docs/credential_model.md`) — block the token proxy.

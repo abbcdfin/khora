@@ -10,7 +10,7 @@ A language model handles credential names only, never values. Each value goes to
 | Type | Stored on KhoraVault | Delivery | What leaves the device |
 |---|---|---|---|
 | `secret` | Opaque value: API key, personal access token | `value`, `inject` | The value |
-| `login` | Username, password, optional TOTP seed, origins | `fill` | Username, password, and the current TOTP code; never the seed |
+| `login` | Username, password, optional TOTP seed, origins | `fill` | Username, password, and the current TOTP code (from the device's phone-supplied time); never the seed |
 | `oauth` | Provider (issuer, client ID), scopes, refresh token, hosts | `inject` | A short-lived access token |
 | `passkey` | FIDO2 private key, relying-party ID | `sign` | Nothing; only signatures |
 | `ssh_key` | SSH private key | `sign` | Nothing; only signatures |
@@ -57,4 +57,3 @@ Each credential carries a policy, stored with it on KhoraVault. Creating or chan
 - **Action scope for `inject`**: whether policy also binds HTTP methods and paths, and whether approval shows the request (`POST …/issues`) rather than the credential. Host binding alone does not stop misuse on a multi-tenant host: `api.github.com` also serves an attacker's repositories.
 - **OAuth refresh exchange**: KhoraVault has no network. Either `khorad` performs the exchange (simple, but the refresh token passes through host memory on every refresh, and a stolen one keeps working off-host until it expires or is revoked), or KhoraVault performs it over a TLS session that `khorad` only relays (the refresh token never leaves the device; needs a TLS stack, CA roots, and trusted time on the MCU).
 - **OAuth client registration**: Khora ships a client ID per provider, or each user registers their own. Provider rules for shared clients differ; Google, for example, restricts Gmail scopes for unverified apps.
-- **TOTP time**: without its own clock, the device computes codes from host-supplied time, so a host could obtain future codes.
