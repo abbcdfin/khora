@@ -1,9 +1,11 @@
-#+TITLE: clawvault: Secure Credential Hardware Bridge
+#+TITLE: Khora: Secure Hardware Credential Bridge for Autonomous Agents
 #+AUTHOR: Jian
-#+DESCRIPTION: A secure USB/Bluetooth hardware device for managing user credentials, specifically designed for agents like openclaw.
+#+DESCRIPTION: A secure hardware-anchored credential bridge system for autonomous agents and automated workflows.
 
 * Introduction
-clawvault is a hardware-based solution for secure credential management. It eliminates the need for users to store sensitive credentials in plain-text configurations or local databases. By storing all credentials on a dedicated device that requires multi-factor authentication (MFA) via a mobile phone over Bluetooth, clawvault ensures high security and ease of use for agents like =openclaw= and other automated systems.
+Khora is a hardware-based solution for secure credential management. It eliminates the need for users to store sensitive credentials in plain-text configurations or local databases. By storing all credentials on a dedicated device that requires multi-factor authentication (MFA) via a mobile phone over Bluetooth, Khora ensures high security and ease of use for agents like =openclaw= and other automated systems.
+
+The name comes from Plato's /khôra/ (χώρα), the receptacle that holds things without being one of them. *Khora* is the whole system; *KhoraVault* is the hardware device at its centre.
 
 * Core Features
 - **Secure Hardware Storage**: Credentials are stored on an encrypted, tamper-resistant hardware module.
@@ -16,34 +18,37 @@ clawvault is a hardware-based solution for secure credential management. It elim
 #+BEGIN_SRC 
 +------------------+          +-------------------+          +-------------------+
 |                  |   BLE    |                   |   USB    |                   |
-|   Mobile App     | <------> |     clawvault     | <------> |   Host Device     |
-| (Authentication) |          | (Secure Storage)  |          | (openclaw/Agents) |
+|    Khora App     | <------> |    KhoraVault     | <------> |   Host Device     |
+| (Authentication) |          | (Secure Storage)  |          | (khora-agent +    |
+|                  |          |                   |          |  openclaw/agents) |
 +------------------+          +-------------------+          +-------------------+
 #+END_SRC
 
-** 1. clawvault Hardware
+** 1. KhoraVault (Hardware)
 - Microcontroller with secure enclave or external TPM.
 - Bluetooth Low Energy (BLE) module.
 - USB-C interface.
 
-** 2. Mobile Authenticator
+** 2. Khora App (Mobile Authenticator)
 - A dedicated app that manages device pairing and grants access via biometric or PIN authentication.
 
-** 3. Host Agent
-- A lightweight service/driver running on the host machine that communicates with the clawvault device to retrieve credentials upon request.
+** 3. khora-agent (Host Agent)
+- A lightweight service/driver running on the host machine that communicates with KhoraVault to retrieve credentials upon request.
 
 * Security Design
-- **End-to-End Encryption**: All communication between the mobile app, device, and host is encrypted using modern cryptographic standards (e.g., AES-256-GCM, RSA/ECC).
+- **End-to-End Encryption**: Every link between the Khora app, KhoraVault, and the host is authenticated and encrypted.
 - **Physical Security**: The device is designed to be tamper-evident.
-- **Zero-Knowledge Architecture**: The host device never sees the master encryption key; it only receives the specific credentials it is authorized to access after successful authentication.
+- **Master Key Isolation**: The host never sees the master encryption key; it receives only the individual credential approved for a request.
+
+Khora protects secrets at rest and against unapproved use; it does not protect a host that is already compromised. See [[file:docs/architecture_design.md][Architecture Design]] for the full threat model.
 
 * Usage Scenario: openclaw
 Instead of configuring =openclaw= with an API key in a =.env= file:
-1. Plug clawvault into the USB port.
-2. openclaw requests the API key from the clawvault host agent.
-3. clawvault notifies the mobile app via Bluetooth.
+1. Plug KhoraVault into the USB port.
+2. openclaw requests the API key from =khora-agent=.
+3. KhoraVault notifies the Khora app via Bluetooth.
 4. User approves the request on their phone (FaceID/Fingerprint).
-5. clawvault releases the API key to openclaw over the secure USB channel.
+5. KhoraVault releases the API key to openclaw over the secure USB channel.
 
 * Future Work
 - **Protocol Specification**: Define a lightweight JSON-over-Serial or HID-based protocol for agent communication.
